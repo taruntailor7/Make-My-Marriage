@@ -26,13 +26,13 @@ export async function deleteAsset(publicId: string) {
   return cloudinary.uploader.destroy(publicId)
 }
 
-export async function deleteFolder(folderPath: string) {
-  try {
-    await cloudinary.api.delete_resources_by_prefix(folderPath)
-    await cloudinary.api.delete_folder(folderPath)
-  } catch {
-    // best-effort cleanup
+export async function deleteFolder(weddingId: string, subpath = "") {
+  const folderPath = `weddings/${weddingId}${subpath ? `/${subpath}` : ""}`
+  if (folderPath.includes("..") || folderPath.includes("*")) {
+    throw new Error("Invalid folder path")
   }
+  await cloudinary.api.delete_resources_by_prefix(folderPath)
+  await cloudinary.api.delete_folder(folderPath)
 }
 
 export { cloudinary }

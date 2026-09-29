@@ -7,6 +7,9 @@ import bcrypt from "bcryptjs"
 import { connectDB } from "@/lib/db/connection"
 import { User } from "@/lib/db/models"
 
+// Pre-hashed dummy for constant-time auth (prevents user enumeration via timing)
+const DUMMY_HASH = bcrypt.hashSync("__dummy__", 10)
+
 const client = new MongoClient(process.env.MONGODB_URI!)
 const clientPromise = client.connect()
 
@@ -21,7 +24,6 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     Google({
       clientId: process.env.GOOGLE_CLIENT_ID!,
       clientSecret: process.env.GOOGLE_CLIENT_SECRET!,
-      allowDangerousEmailAccountLinking: true,
     }),
 
     Credentials({
@@ -37,13 +39,15 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const user = await User.findOne({ email: credentials.email }).select(
           "+hashedPassword"
         )
-        if (!user?.hashedPassword) return null
 
+        // Constant-time: always run bcrypt even if user not found
+        const hashToCompare =
+          user?.hashedPassword ?? DUMMY_HASH
         const isValid = await bcrypt.compare(
           credentials.password as string,
-          user.hashedPassword
+          hashToCompare
         )
-        if (!isValid) return null
+        if (!user?.hashedPassword || !isValid) return null
 
         return {
           id: user._id.toString(),
@@ -56,6 +60,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   ],
 
   callbacks: {
+    async signIn({ user, account }) {
+      // Block Google OAuth linking to unverified credentials accounts
+      if (account?.provider === "google" && user.email) {
+        await connectDB()
+        const existing = await User.findOne({ email: user.email })
+        if (existing && !existing.emailVerified) {
+          return false
+        }
+      }
+      return true
+    },
+
     async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id

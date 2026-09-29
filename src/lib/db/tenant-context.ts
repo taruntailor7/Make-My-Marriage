@@ -145,9 +145,12 @@ export class TenantContext {
     )
   }
 
-  // --- Invite Tokens ---
+  // --- Invite Tokens (owner/admin only) ---
   async findInviteTokens() {
-    return InviteToken.find({ weddingId: this.weddingId }).sort({ createdAt: -1 })
+    if (this.isCoordinator()) throw new Error("Coordinators cannot access invite tokens")
+    return InviteToken.find({ weddingId: this.weddingId })
+      .select("-token")
+      .sort({ createdAt: -1 })
   }
 
   // --- Notifications ---
