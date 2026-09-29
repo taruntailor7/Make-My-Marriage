@@ -67,8 +67,11 @@ All product and technical docs are in `docs/`:
 - `API_DESIGN.md` — 57 Server Actions + 10 REST routes, zod schemas, auth rules, role requirements
 - `LANDING_PAGE_DESIGN.md` — landing page design brief
 - `STITCH_PROMPTS.md` — UI design prompts for all 22 pages
+- `PROJECT_STATUS.md` — live build progress tracker
 
 **When implementing a feature, read the relevant doc section first. Don't guess — schemas, validation rules, field types, and business logic are all specified.**
+
+**After completing a major feature, update `docs/PROJECT_STATUS.md`** — mark the feature as done with the date, add a brief note on what was built, and ensure the "next" marker points to the correct upcoming item. This is how we track project progress across sessions.
 
 ## Build Order (Phase 1 — Foundation)
 
@@ -89,7 +92,7 @@ Per `ARCHITECTURE.md` Section 16.2:
 13. Revoke organizer access
 14. Multi-wedding switcher
 15. Dashboard shell
-16. Landing page
+16. ~~Landing page~~ ✅
 
 ## Color System
 
