@@ -77,9 +77,8 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.id = user.id
       }
 
-      // Allow updating activeWeddingId via session update
       if (trigger === "update" && session?.activeWeddingId) {
-        token.activeWeddingId = session.activeWeddingId
+        token.activeWeddingId = session.activeWeddingId as string
       }
 
       // Invalidate JWT if password was changed after token was issued
@@ -88,7 +87,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         const dbUser = await User.findById(token.id).select("passwordChangedAt").lean()
         if (dbUser?.passwordChangedAt) {
           const changedAtSec = Math.floor(dbUser.passwordChangedAt.getTime() / 1000)
-          if (changedAtSec > (token.iat as number)) {
+          if (changedAtSec >= (token.iat as number)) {
             return {} as typeof token
           }
         }
@@ -100,8 +99,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
     async session({ session, token }) {
       if (session.user) {
         session.user.id = token.id as string
-        ;(session.user as { activeWeddingId?: string }).activeWeddingId =
-          token.activeWeddingId as string | undefined
+        session.user.activeWeddingId = token.activeWeddingId
       }
       return session
     },

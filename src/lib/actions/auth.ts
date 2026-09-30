@@ -32,42 +32,43 @@ export const signUpAction = actionClient
 export const forgotPasswordAction = actionClient
   .schema(forgotPasswordSchema)
   .action(async ({ parsedInput: { email } }) => {
-    const user = await User.findOne({ email })
+    const user = await User.findOne({ email }).select("+hashedPassword")
 
-    // Always return success to prevent email enumeration
-    if (!user) return { sent: true }
+    if (user?.hashedPassword) {
+      const rawToken = crypto.randomBytes(32).toString("hex")
+      const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex")
+      const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
+      const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
+      const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`
 
-    const rawToken = crypto.randomBytes(32).toString("hex")
-    const hashedToken = crypto.createHash("sha256").update(rawToken).digest("hex")
-    const expires = new Date(Date.now() + 60 * 60 * 1000) // 1 hour
-
-    await User.updateOne(
-      { _id: user._id },
-      { $set: { resetToken: hashedToken, resetTokenExpiry: expires } }
-    )
-
-    const baseUrl = process.env.NEXTAUTH_URL ?? "http://localhost:3000"
-    const resetUrl = `${baseUrl}/reset-password?token=${rawToken}`
-
-    await resend.emails.send({
-      from: FROM_EMAIL,
-      to: email,
-      subject: "Reset your Make My Marriage password",
-      html: `
-        <div style="font-family: 'DM Sans', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px;">
-          <h1 style="font-size: 24px; color: #1A1A1A; margin-bottom: 16px;">Reset your password</h1>
-          <p style="font-size: 14px; color: #6B6B6B; line-height: 1.6;">
-            You requested a password reset for your Make My Marriage account. Click the button below to set a new password.
-          </p>
-          <a href="${resetUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 32px; background-color: #C8A26B; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
-            Reset Password
-          </a>
-          <p style="font-size: 12px; color: #9A9A9A; margin-top: 32px; line-height: 1.5;">
-            This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
-          </p>
-        </div>
-      `,
-    })
+      // Detach DB write + email as chained background task for constant response time
+      User.updateOne(
+        { _id: user._id },
+        { $set: { resetToken: hashedToken, resetTokenExpiry: expires } }
+      )
+        .then(() =>
+          resend.emails.send({
+            from: FROM_EMAIL,
+            to: email,
+            subject: "Reset your Make My Marriage password",
+            html: `
+              <div style="font-family: 'DM Sans', sans-serif; max-width: 480px; margin: 0 auto; padding: 40px 24px;">
+                <h1 style="font-size: 24px; color: #1A1A1A; margin-bottom: 16px;">Reset your password</h1>
+                <p style="font-size: 14px; color: #6B6B6B; line-height: 1.6;">
+                  You requested a password reset for your Make My Marriage account. Click the button below to set a new password.
+                </p>
+                <a href="${resetUrl}" style="display: inline-block; margin-top: 24px; padding: 12px 32px; background-color: #C8A26B; color: #FFFFFF; text-decoration: none; border-radius: 8px; font-size: 14px; font-weight: 600;">
+                  Reset Password
+                </a>
+                <p style="font-size: 12px; color: #9A9A9A; margin-top: 32px; line-height: 1.5;">
+                  This link expires in 1 hour. If you didn't request this, you can safely ignore this email.
+                </p>
+              </div>
+            `,
+          })
+        )
+        .catch(() => {})
+    }
 
     return { sent: true }
   })

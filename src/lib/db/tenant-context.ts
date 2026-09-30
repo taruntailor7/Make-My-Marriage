@@ -187,7 +187,7 @@ export async function getTenantContext(): Promise<TenantContext> {
     throw new Error("Not authenticated")
   }
 
-  const activeWeddingId = (session.user as { activeWeddingId?: string }).activeWeddingId
+  const activeWeddingId = session.user.activeWeddingId
   if (!activeWeddingId) {
     throw new Error("No active wedding selected")
   }
