@@ -82,6 +82,18 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         token.activeWeddingId = session.activeWeddingId
       }
 
+      // Invalidate JWT if password was changed after token was issued
+      if (token.id && token.iat) {
+        await connectDB()
+        const dbUser = await User.findById(token.id).select("passwordChangedAt").lean()
+        if (dbUser?.passwordChangedAt) {
+          const changedAtSec = Math.floor(dbUser.passwordChangedAt.getTime() / 1000)
+          if (changedAtSec > (token.iat as number)) {
+            return {} as typeof token
+          }
+        }
+      }
+
       return token
     },
 

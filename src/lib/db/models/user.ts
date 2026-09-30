@@ -7,6 +7,9 @@ export interface IUser extends Document {
   phone: string | null
   image: string | null
   hashedPassword?: string
+  resetToken?: string
+  resetTokenExpiry?: Date
+  passwordChangedAt?: Date
   createdAt: Date
   updatedAt: Date
 }
@@ -36,6 +39,9 @@ const userSchema = new Schema<IUser>(
     },
     image: { type: String, default: null },
     hashedPassword: { type: String, select: false },
+    resetToken: { type: String, select: false },
+    resetTokenExpiry: { type: Date, select: false },
+    passwordChangedAt: { type: Date, default: null },
   },
   { timestamps: true }
 )
