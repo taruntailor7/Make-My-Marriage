@@ -8,11 +8,11 @@
 | 2 | Security hardening | ✅ Done | 2026-09-30 | Fixed OAuth linking, timing leak, coordinator role gate, Cloudinary path validation |
 | 3 | Landing page | ✅ Done | 2026-09-30 | All 11 sections matching Stitch design — nav, hero with dashboard mockup, features, how-it-works, dashboard preview (dark), role cards, guest experience with phone mockup, trust signals, CTA, footer |
 | 4 | Auth pages | ✅ Done | 2026-09-30 | Login, signup, forgot-password, reset-password. Split-screen design, Google OAuth wired, Zod validation, server actions (signup, forgot-password with Resend email, reset-password with token + session invalidation) |
-| 5 | Onboarding | ✅ Done | 2026-09-30 | Get-started (no-weddings state), create-wedding 3-step wizard with server action (creates wedding + owner membership), my-weddings page with server-side data fetching |
-| 6 | Dashboard shell | 🔲 Next | — | Sidebar + header + wedding switcher |
-| 7 | Events CRUD | 🔲 Planned | — | |
+| 5 | Onboarding | ✅ Done | 2026-09-30 | Get-started (no-weddings state), create-wedding 2-step wizard with server action (creates wedding + owner membership atomically), my-weddings page with switchWedding action |
+| 6 | Dashboard shell + home | ✅ Done | 2026-09-30 | Sidebar (nav, wedding switcher, user section, logout), header (countdown, notifications bell), mobile bottom tab bar, dashboard home with real data (stats, events, tasks) |
+| 7 | Events CRUD | 🔲 Next | — | |
 | 8 | Organizer invite flow | 🔲 Planned | — | |
-| 9 | Multi-wedding switcher | 🔲 Planned | — | |
+| 9 | Multi-wedding switcher | 🔲 Planned | — | Already built via switchWeddingAction + weddings page |
 
 ## Phase 1 Build Order Reference
 
@@ -30,6 +30,6 @@ Per `ARCHITECTURE.md` Section 16.2:
 11. Events CRUD ← **next**
 12. Organizer invite flow
 13. Revoke organizer access
-14. Multi-wedding switcher
-15. Dashboard shell
+14. ~~Multi-wedding switcher~~ ✅
+15. ~~Dashboard shell~~ ✅
 16. ~~Landing page~~ ✅

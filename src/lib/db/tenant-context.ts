@@ -1,4 +1,4 @@
-import type { Types } from "mongoose"
+import { Types } from "mongoose"
 import type { WeddingRole } from "@/types"
 import {
   Event,
@@ -159,6 +159,46 @@ export class TenantContext {
     return Notification.find(this.scopeFilter(filter)).sort({
       sentAt: -1,
     })
+  }
+
+  // --- Dashboard Stats (role-scoped) ---
+  async countGuests() {
+    const filter = this.scopeFilter()
+    if (this.isCoordinator()) filter.eventIds = { $in: this.eventScope }
+    return Guest.countDocuments(filter)
+  }
+
+  async countPendingTasks() {
+    const filter = this.scopeFilter({ status: { $ne: "done" } })
+    if (this.isCoordinator()) {
+      filter.$or = [{ eventId: { $in: this.eventScope } }, { eventId: null }]
+    }
+    return Task.countDocuments(filter)
+  }
+
+  async countOverdueTasks() {
+    const filter = this.scopeFilter({ status: { $ne: "done" }, dueDate: { $lt: new Date() } })
+    if (this.isCoordinator()) {
+      filter.$or = [{ eventId: { $in: this.eventScope } }, { eventId: null }]
+    }
+    return Task.countDocuments(filter)
+  }
+
+  async findRecentTasks(limit = 5) {
+    const filter = this.scopeFilter({ status: { $ne: "done" } })
+    if (this.isCoordinator()) {
+      filter.$or = [{ eventId: { $in: this.eventScope } }, { eventId: null }]
+    }
+    return Task.find(filter).sort({ dueDate: 1 }).limit(limit).lean()
+  }
+
+  async totalSpent(): Promise<number> {
+    if (this.isCoordinator()) return 0
+    const result = await Expense.aggregate([
+      { $match: { weddingId: new Types.ObjectId(this.weddingId) } },
+      { $group: { _id: null, total: { $sum: "$amount" } } },
+    ])
+    return result[0]?.total ?? 0
   }
 
   // --- Role checks ---
